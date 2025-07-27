@@ -7,7 +7,7 @@ on:
 jobs:
   build-and-release:
     runs-on: windows-latest
-    permissions:  # 添加必要的权限
+    permissions: 
       contents: write
 
     steps:
@@ -46,12 +46,19 @@ jobs:
         echo "EXE_PATH=dist/$newName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: 验证 EXE 文件存在
+      shell: pwsh  # 明确使用 PowerShell
       run: |
-        dir ${{ env.EXE_PATH }}
-        if not exist ${{ env.EXE_PATH }} (
-          echo "错误：可执行文件不存在！"
-          exit 1
-        )
+        # 使用 PowerShell 的 Test-Path 检查文件是否存在
+        if (-not (Test-Path -Path $env:EXE_PATH)) {
+            Write-Error "错误：可执行文件 '$env:EXE_PATH' 不存在！"
+            # 列出 dist 目录内容以便调试
+            Write-Host "dist 目录内容:"
+            Get-ChildItem -Path dist -Recurse
+            exit 1
+        }
+        else {
+            Write-Host "验证成功: $env:EXE_PATH 存在"
+        }
 
     - name: 创建 GitHub 发布版本
       uses: softprops/action-gh-release@v1
