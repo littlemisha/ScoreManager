@@ -5,7 +5,7 @@ on:
     branches: [beta]
 
 jobs:
-  构建与发布:
+  build-and-release:
     runs-on: windows-latest
 
     steps:
