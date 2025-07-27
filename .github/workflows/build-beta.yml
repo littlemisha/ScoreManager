@@ -7,6 +7,8 @@ on:
 jobs:
   build-and-release:
     runs-on: windows-latest
+    permissions:  # 添加必要的权限
+      contents: write
 
     steps:
     - name: 检出仓库代码
@@ -15,7 +17,7 @@ jobs:
     - name: 设置 Python 环境
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: "3.10"
 
     - name: 安装依赖项
       run: |
@@ -41,13 +43,21 @@ jobs:
         Rename-Item -Path $exe.FullName -NewName $newName
         
         # 设置环境变量供后续步骤使用
-        echo "EXE_PATH=dist\$newName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        echo "EXE_PATH=dist/$newName" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-    - name: 在 GitHub 发布 Release
+    - name: 验证 EXE 文件存在
+      run: |
+        dir ${{ env.EXE_PATH }}
+        if not exist ${{ env.EXE_PATH }} (
+          echo "错误：可执行文件不存在！"
+          exit 1
+        )
+
+    - name: 创建 GitHub 发布版本
       uses: softprops/action-gh-release@v1
       with:
         prerelease: true
-        tag_name: beta-${{ github.sha }}
+        tag_name: "beta-${{ github.sha }}"
         name: "Beta 版本 (${{ github.sha }})"
         body: "自动构建的 beta 版本，对应提交 ${{ github.sha }}"
         files: ${{ env.EXE_PATH }}
